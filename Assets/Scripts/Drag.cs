@@ -40,9 +40,7 @@ public class Drag : MonoBehaviour {
 	}
 	public void export_Fucks(){
 		string myName = this.transform.name;
-		print (myName);
 		if (myName == "Pounce Enemy") {
-			print("FUCKYOU IM A POUNCE ENEMY BITCH");
 			script.pouncePosition (transform.position);
 		} else if (myName == "Slow Enemy") {
 			script.slowPosition (transform.position);

@@ -68,9 +68,9 @@ public class LevelBuildGui : MonoBehaviour {
 		}
 		int width = farthestRight - farthestLeft + 1;
 		int height = farthestUp - farthestDown + 1;
-		for (int i=0; i<width; i++) {
+		for (int i=0; i<height; i++) {
 			level.tiles.Add (new List<int>());
-			for(int j=0;j<height;j++){
+			for(int j=0;j<width;j++){
 				level.tiles[i].Add (0);
 			}
 		}
@@ -78,10 +78,8 @@ public class LevelBuildGui : MonoBehaviour {
 			GameObject tile = allTheTiles[i];
 			if (tile.name == "Wall"){
 				int tilex = Mathf.RoundToInt(tile.transform.position.x-farthestLeft);
-				print (tilex + " " + width);
 				int tiley = Mathf.RoundToInt(tile.transform.position.y-farthestDown);
-				print (tiley + " " + height);
-				level.tiles[tilex][tiley] = 1;
+				level.tiles[tiley][tilex] = 1;
 			}
 		}
 		level.playerPosition = GameObject.FindGameObjectWithTag ("Player").transform.position;
@@ -136,13 +134,16 @@ public class LevelBuildGui : MonoBehaviour {
 		}
 
 	void DisplayLevel(){
+				GameObject tile;
 				if (level.tiles != null) {
 						for (int y = 0; y < level.tiles.Count; y++) {
 								for (int x = 0; x < level.tiles[y].Count; x++) {
 										if (level.tiles [y] [x] == 0) {
-												Instantiate (floorTile, new Vector3 (x, y, 1), Quaternion.identity);
+												tile = Instantiate (floorTile, new Vector3 (x, y, 1), Quaternion.identity) as GameObject;
+												tile.transform.name = "Tiles";
 										} else if (level.tiles [y] [x] == 1) {
-												Instantiate (wallTile, new Vector3 (x, y, 0), Quaternion.identity);
+												tile = Instantiate (wallTile, new Vector3 (x, y, 0), Quaternion.identity) as GameObject;
+												tile.transform.name = "Wall";
 										}
 										//more types of tiles coming up, e.g. kill zone
 								}
