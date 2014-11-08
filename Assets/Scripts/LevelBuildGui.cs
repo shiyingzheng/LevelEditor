@@ -1,0 +1,559 @@
+﻿/*Peter Aguiar
+ * LevelBuildGui.cs creates the user gui for Level Builder.
+ * 
+ * Self Explanatory. Notice, however, that there is a bool "play" that tells drag.cs in the game whether or not they are allowed to move. 
+ */
+
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+
+public class LevelBuildGui : MonoBehaviour {
+	public GameObject player, slow_enemy, pounce_enemy, fast_enemy, vision_tower, ranged_enemy, exit;
+
+	public KeyCode Delete = KeyCode.H;
+	public bool play = false;
+	public bool export_Position = false;
+
+	public int menu = 0;
+	public string select = "none";
+
+	public Level level;
+	public string inputFile, outputFile;
+
+	public GameObject wallTile;
+	public GameObject floorTile;
+
+	void Start(){
+		level = new Level(inputFile);
+		DisplayLevel();
+		//level.write(outputFile);
+		}
+	void Update(){
+		if (Input.GetMouseButtonDown (1)) {
+			Object_Select();
+		}
+		if (Input.GetMouseButtonDown (2) || Input.GetKeyDown (Delete)) {
+			select = "none";
+			play = false;
+			menu =0;
+		}if (Input.GetKeyDown (KeyCode.LeftShift)){
+			play = true;
+			select = "playmode";
+			menu = 10;
+		}
+	}
+	void export(){
+		level.tiles = new List<List<int>>();
+		GameObject[] allTheTiles = GameObject.FindGameObjectsWithTag ("Tile");
+		int farthestLeft = 0;
+		int farthestRight = 0;
+		int farthestDown = 0;
+		int farthestUp = 0;
+		if (allTheTiles.Length > 0) {
+			farthestLeft = Mathf.RoundToInt(allTheTiles[0].transform.position.x);
+			farthestRight = Mathf.RoundToInt(allTheTiles[0].transform.position.x);
+			farthestUp = Mathf.RoundToInt(allTheTiles[0].transform.position.y);
+			farthestDown = Mathf.RoundToInt(allTheTiles[0].transform.position.y);
+				}
+		for (int i=0; i<allTheTiles.Length; i++) {
+			if(allTheTiles[i].transform.position.x < farthestLeft)
+				farthestLeft = Mathf.RoundToInt(allTheTiles[i].transform.position.x);
+			if(allTheTiles[i].transform.position.x > farthestRight)
+				farthestRight = Mathf.RoundToInt(allTheTiles[i].transform.position.x);
+			if(allTheTiles[i].transform.position.y < farthestDown)
+				farthestDown = Mathf.RoundToInt(allTheTiles[i].transform.position.y);
+			if(allTheTiles[i].transform.position.y > farthestUp)
+				farthestUp = Mathf.RoundToInt(allTheTiles[i].transform.position.y);
+		}
+		int width = farthestRight - farthestLeft + 1;
+		int height = farthestUp - farthestDown + 1;
+		for (int i=0; i<width; i++) {
+			level.tiles.Add (new List<int>());
+			for(int j=0;j<height;j++){
+				level.tiles[i].Add (0);
+			}
+		}
+		for (int i=0; i<allTheTiles.Length; i++) {
+			GameObject tile = allTheTiles[i];
+			if (tile.name == "Wall"){
+				int tilex = Mathf.RoundToInt(tile.transform.position.x-farthestLeft);
+				print (tilex + " " + width);
+				int tiley = Mathf.RoundToInt(tile.transform.position.y-farthestDown);
+				print (tiley + " " + height);
+				level.tiles[tilex][tiley] = 1;
+			}
+		}
+		level.playerPosition = GameObject.FindGameObjectWithTag ("Player").transform.position;
+		level.exitPosition = GameObject.FindGameObjectWithTag ("Exit").transform.position;
+		level.slowEnemyPositions = new List<Vector3> ();
+		level.fastEnemyPositions = new List<Vector3> ();
+		level.rangedEnemyPositions = new List<Vector3> ();
+		level.pounceEnemyPositions = new List<Vector3> ();
+		level.towerPositions = new List<Vector3> ();
+
+		GameObject[] enemies = GameObject.FindGameObjectsWithTag ("Enemy");
+		for (int i=0; i<enemies.Length; i++) {
+			Drag dragscript = enemies[i].GetComponentInChildren<Drag>();
+			if(dragscript!=null){
+				dragscript.export_Fucks();
+			}
+		}
+		Vector3 transformVector = new Vector3 (farthestLeft, farthestDown, 0);
+		level.playerPosition = level.playerPosition - transformVector;
+		level.exitPosition = level.exitPosition - transformVector;
+		for (int i=0; i<level.slowEnemyPositions.Count; i++) {
+			level.slowEnemyPositions[i] = level.slowEnemyPositions[i] - transformVector;
+				}
+		for (int i=0; i<level.fastEnemyPositions.Count; i++) {
+			level.fastEnemyPositions[i] = level.fastEnemyPositions[i] - transformVector;
+		}
+		for (int i=0; i<level.rangedEnemyPositions.Count; i++) {
+			level.rangedEnemyPositions[i] = level.rangedEnemyPositions[i] - transformVector;
+		}
+		for (int i=0; i<level.pounceEnemyPositions.Count; i++) {
+			level.pounceEnemyPositions[i] = level.pounceEnemyPositions[i] - transformVector;
+		}
+		for (int i=0; i<level.towerPositions.Count; i++) {
+			level.towerPositions[i] = level.towerPositions[i] - transformVector;
+		}
+		level.write (outputFile);
+	}
+	public void slowPosition(Vector3 pos){
+				level.slowEnemyPositions.Add (pos);
+		}
+	public void fastPosition (Vector3 pos){
+				level.fastEnemyPositions.Add (pos);
+		}
+	public void rangedPosition(Vector3 pos){
+				level.rangedEnemyPositions.Add (pos);
+		}
+	public void towerPosition(Vector3 pos){
+				level.towerPositions.Add (pos);
+		}
+	public void pouncePosition(Vector3 pos){
+				level.pounceEnemyPositions.Add (pos);
+		}
+
+	void DisplayLevel(){
+				if (level.tiles != null) {
+						for (int y = 0; y < level.tiles.Count; y++) {
+								for (int x = 0; x < level.tiles[y].Count; x++) {
+										if (level.tiles [y] [x] == 0) {
+												Instantiate (floorTile, new Vector3 (x, y, 1), Quaternion.identity);
+										} else if (level.tiles [y] [x] == 1) {
+												Instantiate (wallTile, new Vector3 (x, y, 0), Quaternion.identity);
+										}
+										//more types of tiles coming up, e.g. kill zone
+								}
+						}
+				} else {
+						print ("There is no level yet.");		
+		}
+		GameObject playerObject;
+		GameObject exitObject;
+		GameObject o;
+		if (!(level.playerPosition == Vector3.zero && level.exitPosition == Vector3.zero)) {
+						playerObject = Instantiate (player, level.playerPosition, Quaternion.identity) as GameObject;
+						playerObject.transform.name = "Player";
+						exitObject = Instantiate (exit, level.exitPosition, Quaternion.identity)as GameObject;
+						exitObject.transform.name = "Exit";
+				}
+		for(int i=0;i<level.slowEnemyPositions.Count;i++){
+			o = Instantiate (slow_enemy, level.slowEnemyPositions[i], Quaternion.identity) as GameObject;
+			o.transform.name = "Slow Enemy";
+		}
+		for(int i=0;i<level.fastEnemyPositions.Count;i++){
+			o = Instantiate (fast_enemy, level.fastEnemyPositions[i], Quaternion.identity)as GameObject;
+			o.transform.name = "Fast Enemy";
+		}
+		for(int i=0;i<level.pounceEnemyPositions.Count;i++){
+				o = Instantiate (pounce_enemy, level.pounceEnemyPositions[i], Quaternion.identity)as GameObject;
+			o.transform.name = "Pounce Enemy";
+		}
+		for(int i=0;i<level.rangedEnemyPositions.Count;i++){
+				o = Instantiate (ranged_enemy, level.rangedEnemyPositions[i], Quaternion.identity)as GameObject;
+			o.transform.name = "Ranged Enemy";
+		}
+		for(int i=0;i<level.towerPositions.Count;i++){
+				o = Instantiate (vision_tower, level.towerPositions[i], Quaternion.identity)as GameObject;
+			o.transform.name = "Vision Tower";
+		}
+		}
+	void OnGUI(){
+		GUI.Box (new Rect (Screen.width*0.70f, 0, Screen.width/4, Screen.height/25), "SELECTION: "+select);
+
+		if (menu == 0) {
+						GUI.Box (new Rect (0, 0, Screen.width / 4, Screen.height), "EDITOR");
+						Main_Select ();
+				} else if (menu == 1) {
+						GUI.Box (new Rect (0, 0, Screen.width / 4, Screen.height), "PLAYER OBJECTS");
+						Player_Select ();
+				} else if (menu == 2) {
+						GUI.Box (new Rect (0, 0, Screen.width / 4, Screen.height), "TERRAIN/OBJECTS");
+						Terrain_Select ();
+				} else if (menu == 3) {
+						GUI.Box (new Rect (0, 0, Screen.width / 4, Screen.height), "ENEMY OBJECTS");
+						Enemy_Select ();
+				} else if (menu == 4) {
+						GUI.Box (new Rect (0, 0, Screen.width / 4, Screen.height), "MINES");
+						Mine_Select ();
+				} else if (menu == 5) {
+						GUI.Box (new Rect (0, 0, Screen.width / 4, Screen.height), "RESOURCES");
+						Resource_Select ();
+				} else if (select == "playmode") {
+						playmode ();
+				} else if (menu == 6) {
+						export ();
+				}
+	}
+	void Object_Select(){
+		Vector3 locale = Camera.main.ScreenToWorldPoint (Input.mousePosition);
+		locale.z = 0;
+		GameObject oh;
+				if (select == "Player") {
+			oh = Instantiate (player, (locale), Quaternion.identity)as GameObject;
+						
+				} else if (select == "Fast Enemy") {
+			oh = Instantiate (fast_enemy, locale, Quaternion.identity) as GameObject;
+				} else if (select == "Slow Enemy") {
+			oh = Instantiate (slow_enemy, (locale), Quaternion.identity)as GameObject;
+				} else if (select == "Ranged Enemy") {
+			oh = Instantiate (ranged_enemy, (locale), Quaternion.identity)as GameObject;
+				} else if (select == "Vision Tower") {
+			oh = Instantiate (vision_tower, (locale), Quaternion.identity)as GameObject;
+				} else if (select == "Pounce Enemy") {
+			oh = Instantiate (pounce_enemy, (locale), Quaternion.identity)as GameObject;
+				} else if (select == "Exit") {
+			oh = Instantiate (exit, locale, Quaternion.identity)as GameObject;
+				} else if (select == "Tiles") {
+			oh = Instantiate (floorTile, locale, Quaternion.identity)as GameObject;
+				} else {
+			oh = Instantiate (wallTile, locale, Quaternion.identity)as GameObject;
+				}
+				oh.transform.name = select;	
+			
+		}
+		void playmode(){
+		float offset = 0.0f;
+		if (GUI.Button (new Rect (10,  10 + offset, Screen.width / 10, Screen.height * 0.05f), "X")) {
+			select = "none";
+			menu = 0;
+			play = false;
+			}	
+		}
+	void Main_Select(){
+		float offset = 0.0f;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Player")) {
+			menu = 1;
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Objects/Terrain")) {
+			menu = 2;
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Enemies")) {
+			menu = 3;
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Mines")) {
+			menu = 4;
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Resource Preset")) {
+			menu = 5;
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Export Level")) {
+			menu = 6;
+		}
+	}
+	void Player_Select(){
+		if (GUI.Button (new Rect (10,  10 , 40, Screen.height * 0.05f), "X")) {
+			menu = 0;
+		}
+		float offset = 0.0f;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Player")) {
+			select = "Player";
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Exit")) {
+			select = "Exit";
+		}
+	}
+	void Terrain_Select(){if (GUI.Button (new Rect (10,  10 , 40, Screen.height * 0.05f), "X")) {
+			menu = 0;
+		}
+		float offset = 0.0f;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Tiles")) {
+			select = "Tiles";
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Wall")) {
+			select = "Wall";
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+	}
+	void Enemy_Select(){
+		if (GUI.Button (new Rect (10,  10 , 40, Screen.height * 0.05f), "X")) {
+			menu = 0;
+		}
+		float offset = 0.0f;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Slow Enemy")) {
+			select = "Slow Enemy";
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Fast Enemy")) {
+			select = "Fast Enemy";
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Pounce Enemy")) {
+			select = "Pounce Enemy";
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Ranged Enemy")) {
+			select = "Ranged Enemy";
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Vision Tower")) {
+			select = "Vision Tower";
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+	}
+	void Mine_Select(){
+		if (GUI.Button (new Rect (10,  10 , 40, Screen.height * 0.05f), "X")) {
+			menu = 0;
+		}
+		float offset = 0.0f;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+	}
+	void Resource_Select(){
+		if (GUI.Button (new Rect (10, 10, 40, Screen.height * 0.05f), "X")) {
+			menu = 0;
+		}
+		float offset = 0.0f;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+		offset += Screen.height * 0.05f + 5;
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
+			
+		}
+	}
+}
