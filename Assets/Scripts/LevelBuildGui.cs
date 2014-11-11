@@ -9,7 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class LevelBuildGui : MonoBehaviour {
-	public GameObject player, slow_enemy, pounce_enemy, fast_enemy, vision_tower, ranged_enemy, exit, dead_zone;
+	public GameObject player, slow_enemy, pounce_enemy, fast_enemy, vision_tower, ranged_enemy, exit, dead_zone, blowup_mine, push_mine, slow_mine, invisijuice;
 
 	public KeyCode Delete = KeyCode.H;
 	public bool play = false;
@@ -90,6 +90,10 @@ public class LevelBuildGui : MonoBehaviour {
 		level.pounceEnemyPositions = new List<Vector3> ();
 		level.towerPositions = new List<Vector3> ();
 		level.deadZonePositions = new List<Vector3> ();
+		level.blowupMinePositions = new List<Vector3> ();
+		level.slowMinePositions = new List<Vector3> ();
+		level.pushMinePositions = new List<Vector3> ();
+		level.invisijuicePositions = new List<Vector3> ();
 
 		GameObject[] enemies = GameObject.FindGameObjectsWithTag ("Enemy");
 		for (int i=0; i<enemies.Length; i++) {
@@ -101,6 +105,22 @@ public class LevelBuildGui : MonoBehaviour {
 		GameObject[] deadZones = GameObject.FindGameObjectsWithTag ("Dead Zone");
 		for (int i=0; i<deadZones.Length; i++) {
 			level.deadZonePositions.Add(deadZones[i].transform.position);
+		}
+		GameObject[] blowupMines = GameObject.FindGameObjectsWithTag ("Blowup Mine");
+		for (int i=0; i<blowupMines.Length; i++) {
+			level.blowupMinePositions.Add(blowupMines[i].transform.position);
+		}
+		GameObject[] pushMines = GameObject.FindGameObjectsWithTag ("Push Mine");
+		for (int i=0; i<pushMines.Length; i++) {
+			level.pushMinePositions.Add(pushMines[i].transform.position);
+		}
+		GameObject[] slowMines = GameObject.FindGameObjectsWithTag ("Slow Mine");
+		for (int i=0; i<slowMines.Length; i++) {
+			level.slowMinePositions.Add(slowMines[i].transform.position);
+		}
+		GameObject[] invisijuices = GameObject.FindGameObjectsWithTag ("Invisijuice");
+		for (int i=0; i<invisijuices.Length; i++) {
+			level.invisijuicePositions.Add(invisijuices[i].transform.position);
 		}
 		Vector3 transformVector = new Vector3 (farthestLeft, farthestDown, 0);
 		level.playerPosition = level.playerPosition - transformVector;
@@ -123,6 +143,19 @@ public class LevelBuildGui : MonoBehaviour {
 		for (int i=0; i<level.deadZonePositions.Count; i++) {
 			level.deadZonePositions[i] = level.deadZonePositions[i] - transformVector;
 		}
+		for (int i=0; i<level.blowupMinePositions.Count; i++) {
+			level.blowupMinePositions[i] = level.blowupMinePositions[i] - transformVector;
+		}
+		for (int i=0; i<level.pushMinePositions.Count; i++) {
+			level.pushMinePositions[i] = level.pushMinePositions[i] - transformVector;
+		}
+		for (int i=0; i<level.slowMinePositions.Count; i++) {
+			level.slowMinePositions[i] = level.slowMinePositions[i] - transformVector;
+		}
+		for (int i=0; i<level.invisijuicePositions.Count; i++) {
+			level.invisijuicePositions[i] = level.invisijuicePositions[i] - transformVector;
+		}
+		
 		level.write (outputFile);
 	}
 	public void slowPosition(Vector3 pos){
@@ -192,6 +225,22 @@ public class LevelBuildGui : MonoBehaviour {
 			o = Instantiate (dead_zone, level.deadZonePositions[i], Quaternion.identity)as GameObject;
 			o.transform.name = "Dead Zone";
 		}
+		for(int i=0;i<level.blowupMinePositions.Count;i++){
+			o = Instantiate (blowup_mine, level.blowupMinePositions[i], Quaternion.identity)as GameObject;
+			o.transform.name = "Blowup Mine";
+		}
+		for(int i=0;i<level.pushMinePositions.Count;i++){
+			o = Instantiate (push_mine, level.pushMinePositions[i], Quaternion.identity)as GameObject;
+			o.transform.name = "Push Mine";
+		}
+		for(int i=0;i<level.slowMinePositions.Count;i++){
+			o = Instantiate (slow_mine, level.slowMinePositions[i], Quaternion.identity)as GameObject;
+			o.transform.name = "Slow Mine";
+		}
+		for(int i=0;i<level.invisijuicePositions.Count;i++){
+			o = Instantiate (invisijuice, level.invisijuicePositions[i], Quaternion.identity)as GameObject;
+			o.transform.name = "Invisijuice";
+		}
 		}
 	void OnGUI(){
 		GUI.Box (new Rect (Screen.width*0.70f, 0, Screen.width/4, Screen.height/25), "SELECTION: "+select);
@@ -244,7 +293,19 @@ public class LevelBuildGui : MonoBehaviour {
 				} 
 			else if (select == "Dead Zone") {
 				oh = Instantiate (dead_zone, locale, Quaternion.identity)as GameObject;
-			} else {
+			}
+		else if (select == "Blowup Mine") {
+			oh = Instantiate (blowup_mine, locale, Quaternion.identity)as GameObject;
+		}
+		else if (select == "Push Mine") {
+			oh = Instantiate (push_mine, locale, Quaternion.identity)as GameObject;
+		}
+		else if (select == "Slow Mine") {
+			oh = Instantiate (slow_mine, locale, Quaternion.identity)as GameObject;
+		}
+		else if (select == "Invisijuice") {
+			oh = Instantiate (invisijuice, locale, Quaternion.identity)as GameObject;
+		} else {
 			oh = Instantiate (wallTile, locale, Quaternion.identity)as GameObject;
 				}
 				oh.transform.name = select;	
@@ -439,20 +500,20 @@ public class LevelBuildGui : MonoBehaviour {
 			menu = 0;
 		}
 		float offset = 0.0f;
-		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
-			
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Blowup Mine")) {
+			select = "Blowup Mine";
 		}
 		offset += Screen.height * 0.05f + 5;
-		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
-			
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Push Mine")) {
+			select = "Push Mine";
 		}
 		offset += Screen.height * 0.05f + 5;
-		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
-			
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Slow Mine")) {
+			select = "Slow Mine";
 		}
 		offset += Screen.height * 0.05f + 5;
-		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
-			
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Invisijuice")) {
+			select = "Invisijuice";
 		}
 		offset += Screen.height * 0.05f + 5;
 		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
