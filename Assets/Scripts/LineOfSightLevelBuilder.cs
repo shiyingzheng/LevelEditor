@@ -18,6 +18,7 @@ public class LineOfSightLevelBuilder : MonoBehaviour {
 	public string maskingLayerName;
 	
 	public float radius = 15.0f;
+	public float normalRadius = .15f;
 	
 	private GameObject spawn;
 	private LevelBuildGui script;
@@ -47,7 +48,7 @@ public class LineOfSightLevelBuilder : MonoBehaviour {
 			enemyScript./*-->*/ inLineOfSight /*<--*/ = false; //!!!! YOU MIGHT NEED TO CHANGE !!!!
 		}
 		if (!script.play) {
-			myCollider.radius = 1.0f;
+			myCollider.radius = normalRadius;
 			
 		} else {
 			myCollider.radius = radius;

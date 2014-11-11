@@ -9,7 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class LevelBuildGui : MonoBehaviour {
-	public GameObject player, slow_enemy, pounce_enemy, fast_enemy, vision_tower, ranged_enemy, exit;
+	public GameObject player, slow_enemy, pounce_enemy, fast_enemy, vision_tower, ranged_enemy, exit, dead_zone;
 
 	public KeyCode Delete = KeyCode.H;
 	public bool play = false;
@@ -89,8 +89,16 @@ public class LevelBuildGui : MonoBehaviour {
 		level.rangedEnemyPositions = new List<Vector3> ();
 		level.pounceEnemyPositions = new List<Vector3> ();
 		level.towerPositions = new List<Vector3> ();
+		level.deadZonePositions = new List<Vector3> ();
 
 		GameObject[] enemies = GameObject.FindGameObjectsWithTag ("Enemy");
+		for (int i=0; i<enemies.Length; i++) {
+			Drag dragscript = enemies[i].GetComponentInChildren<Drag>();
+			if(dragscript!=null){
+				dragscript.export_Fucks();
+			}
+		}
+		GameObject[] deadZones = GameObject.FindGameObjectsWithTag ("Dead Zone");
 		for (int i=0; i<enemies.Length; i++) {
 			Drag dragscript = enemies[i].GetComponentInChildren<Drag>();
 			if(dragscript!=null){
@@ -114,6 +122,9 @@ public class LevelBuildGui : MonoBehaviour {
 		}
 		for (int i=0; i<level.towerPositions.Count; i++) {
 			level.towerPositions[i] = level.towerPositions[i] - transformVector;
+		}
+		for (int i=0; i<level.deadZonePositions.Count; i++) {
+			level.deadZonePositions[i] = level.deadZonePositions[i] - transformVector;
 		}
 		level.write (outputFile);
 	}
@@ -180,6 +191,10 @@ public class LevelBuildGui : MonoBehaviour {
 				o = Instantiate (vision_tower, level.towerPositions[i], Quaternion.identity)as GameObject;
 			o.transform.name = "Vision Tower";
 		}
+		for(int i=0;i<level.deadZonePositions.Count;i++){
+			o = Instantiate (dead_zone, level.towerPositions[i], Quaternion.identity)as GameObject;
+			o.transform.name = "Dead Zone";
+		}
 		}
 	void OnGUI(){
 		GUI.Box (new Rect (Screen.width*0.70f, 0, Screen.width/4, Screen.height/25), "SELECTION: "+select);
@@ -229,7 +244,10 @@ public class LevelBuildGui : MonoBehaviour {
 			oh = Instantiate (exit, locale, Quaternion.identity)as GameObject;
 				} else if (select == "Tiles") {
 			oh = Instantiate (floorTile, locale, Quaternion.identity)as GameObject;
-				} else {
+				} 
+			else if (select == "Dead Zone") {
+				oh = Instantiate (dead_zone, locale, Quaternion.identity)as GameObject;
+			} else {
 			oh = Instantiate (wallTile, locale, Quaternion.identity)as GameObject;
 				}
 				oh.transform.name = select;	
@@ -294,8 +312,8 @@ public class LevelBuildGui : MonoBehaviour {
 			select = "Wall";
 		}
 		offset += Screen.height * 0.05f + 5;
-		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
-			
+		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "Dead Zone")) {
+			select = "Dead Zone";
 		}
 		offset += Screen.height * 0.05f + 5;
 		if (GUI.Button (new Rect (10, Screen.height / 10 + offset, Screen.width / 4 - 20, Screen.height * 0.05f), "")) {
