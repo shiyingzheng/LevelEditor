@@ -99,11 +99,8 @@ public class LevelBuildGui : MonoBehaviour {
 			}
 		}
 		GameObject[] deadZones = GameObject.FindGameObjectsWithTag ("Dead Zone");
-		for (int i=0; i<enemies.Length; i++) {
-			Drag dragscript = enemies[i].GetComponentInChildren<Drag>();
-			if(dragscript!=null){
-				dragscript.export_Fucks();
-			}
+		for (int i=0; i<deadZones.Length; i++) {
+			level.deadZonePositions.Add(deadZones[i].transform.position);
 		}
 		Vector3 transformVector = new Vector3 (farthestLeft, farthestDown, 0);
 		level.playerPosition = level.playerPosition - transformVector;
@@ -192,7 +189,7 @@ public class LevelBuildGui : MonoBehaviour {
 			o.transform.name = "Vision Tower";
 		}
 		for(int i=0;i<level.deadZonePositions.Count;i++){
-			o = Instantiate (dead_zone, level.towerPositions[i], Quaternion.identity)as GameObject;
+			o = Instantiate (dead_zone, level.deadZonePositions[i], Quaternion.identity)as GameObject;
 			o.transform.name = "Dead Zone";
 		}
 		}
