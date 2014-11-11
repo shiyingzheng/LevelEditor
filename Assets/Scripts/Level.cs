@@ -330,7 +330,7 @@ public class Level{
 			string pushMineLine = "";
 			for (int i = 0; i < pushMinePositions.Count; i++){
 				pushMineLine += pushMinePositions[i][0].ToString() + "," + pushMinePositions[i][1].ToString();
-				if (i < deadZonePositions.Count - 1){
+				if (i < pushMinePositions.Count - 1){
 					pushMineLine += " ";
 				}
 			}
@@ -341,7 +341,7 @@ public class Level{
 			string blowupMineLine = "";
 			for (int i = 0; i < blowupMinePositions.Count; i++){
 				blowupMineLine += blowupMinePositions[i][0].ToString() + "," + blowupMinePositions[i][1].ToString();
-				if (i < deadZonePositions.Count - 1){
+				if (i < blowupMinePositions.Count - 1){
 					blowupMineLine += " ";
 				}
 			}
@@ -352,7 +352,7 @@ public class Level{
 			string slowMineLine = "";
 			for (int i = 0; i < slowMinePositions.Count; i++){
 				slowMineLine += slowMinePositions[i][0].ToString() + "," + slowMinePositions[i][1].ToString();
-				if (i < deadZonePositions.Count - 1){
+				if (i < slowMinePositions.Count - 1){
 					slowMineLine += " ";
 				}
 			}
@@ -363,7 +363,7 @@ public class Level{
 			string invisijuiceLine = "";
 			for (int i = 0; i < invisijuicePositions.Count; i++){
 				invisijuiceLine += invisijuicePositions[i][0].ToString() + "," + invisijuicePositions[i][1].ToString();
-				if (i < deadZonePositions.Count - 1){
+				if (i < invisijuicePositions.Count - 1){
 					invisijuiceLine += " ";
 				}
 			}
